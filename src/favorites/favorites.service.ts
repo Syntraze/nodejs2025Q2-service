@@ -3,9 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
   UnprocessableEntityException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { validate as isUUID } from 'uuid';
-import { Inject, forwardRef } from '@nestjs/common';
 import { Artist } from 'src/artists/entities/artist.entity';
 import { Album } from 'src/albums/entities/album.entity';
 import { Track } from 'src/tracks/entities/track.entity';
@@ -18,6 +19,7 @@ export class FavoritesService {
   private favoriteArtists = new Set<string>();
   private favoriteAlbums = new Set<string>();
   private favoriteTracks = new Set<string>();
+
   constructor(
     @Inject(forwardRef(() => ArtistService))
     private readonly artistService: ArtistService,
@@ -29,63 +31,71 @@ export class FavoritesService {
     private readonly trackService: TrackService,
   ) {}
 
-  getAll(): {
+  async getAll(): Promise<{
     artists: Artist[];
     albums: Album[];
     tracks: Track[];
-  } {
-    return {
-      artists: Array.from(this.favoriteArtists).map((id) =>
+  }> {
+    const artists = await Promise.all(
+      Array.from(this.favoriteArtists).map((id) =>
         this.artistService.findOne(id),
       ),
-      albums: Array.from(this.favoriteAlbums).map((id) =>
+    );
+    const albums = await Promise.all(
+      Array.from(this.favoriteAlbums).map((id) =>
         this.albumService.findOne(id),
       ),
-      tracks: Array.from(this.favoriteTracks).map((id) =>
+    );
+    const tracks = await Promise.all(
+      Array.from(this.favoriteTracks).map((id) =>
         this.trackService.findOne(id),
       ),
-    };
+    );
+
+    return { artists, albums, tracks };
   }
 
-  private validateAndAdd(entityType: 'artist' | 'album' | 'track', id: string) {
+  private async validateAndAdd(
+    entityType: 'artist' | 'album' | 'track',
+    id: string,
+  ): Promise<void> {
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
 
-    let exists = false;
-
-    switch (entityType) {
-      case 'artist':
-        exists = !!this.artistService.findOne(id);
-        if (!exists)
-          throw new UnprocessableEntityException('Artist does not exist');
-        this.favoriteArtists.add(id);
-        break;
-      case 'album':
-        exists = !!this.albumService.findOne(id);
-        if (!exists)
-          throw new UnprocessableEntityException('Album does not exist');
-        this.favoriteAlbums.add(id);
-        break;
-      case 'track':
-        exists = !!this.trackService.findOne(id);
-        if (!exists)
-          throw new UnprocessableEntityException('Track does not exist');
-        this.favoriteTracks.add(id);
-        break;
+    try {
+      switch (entityType) {
+        case 'artist':
+          await this.artistService.findOne(id);
+          this.favoriteArtists.add(id);
+          break;
+        case 'album':
+          await this.albumService.findOne(id);
+          this.favoriteAlbums.add(id);
+          break;
+        case 'track':
+          await this.trackService.findOne(id);
+          this.favoriteTracks.add(id);
+          break;
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new UnprocessableEntityException(`${entityType} does not exist`);
+      }
+      throw error; 
     }
   }
 
-  addArtistToFavorites(id: string) {
-    this.validateAndAdd('artist', id);
+  async addArtistToFavorites(id: string) {
+    await this.validateAndAdd('artist', id);
     return { message: 'Artist added to favorites' };
   }
 
-  addAlbumToFavorites(id: string) {
-    this.validateAndAdd('album', id);
+  async addAlbumToFavorites(id: string) {
+    await this.validateAndAdd('album', id);
     return { message: 'Album added to favorites' };
   }
 
-  addTrackToFavorites(id: string) {
-    this.validateAndAdd('track', id);
+  async addTrackToFavorites(id: string) {
+    await this.validateAndAdd('track', id);
     return { message: 'Track added to favorites' };
   }
 
