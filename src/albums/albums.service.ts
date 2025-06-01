@@ -17,10 +17,9 @@ export class AlbumService {
   private albums: Album[] = [];
 
   constructor(
-
-      @Inject(forwardRef(() => FavoritesService))
-      private readonly favoritesService: FavoritesService,
-  @Inject(forwardRef(() => TrackService))
+    @Inject(forwardRef(() => FavoritesService))
+    private readonly favoritesService: FavoritesService,
+    @Inject(forwardRef(() => TrackService))
     private readonly trackService: TrackService,
   ) {}
 
