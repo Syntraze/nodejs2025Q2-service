@@ -7,10 +7,13 @@ import { Track } from './entities/track.entity';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { validate as isUUID } from 'uuid';
+import { FavoritesService } from 'src/favorites/favorites.service';
 
 @Injectable()
 export class TrackService {
   private tracks: Track[] = [];
+
+  constructor(private readonly favoritesService: FavoritesService) {}
 
   findAll(): Track[] {
     return this.tracks;
@@ -47,10 +50,14 @@ export class TrackService {
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
     const index = this.tracks.findIndex((t) => t.id === id);
     if (index === -1) throw new NotFoundException('Track not found');
+
+    // Clean up references
+    this.favoritesService.handleEntityDeletion('track', id);
+
     this.tracks.splice(index, 1);
   }
 
-  nullifyArtistReferences(artistId: string) {
+  nullifyArtistReferences(artistId: string): void {
     this.tracks.forEach((track) => {
       if (track.artistId === artistId) {
         track.artistId = null;
@@ -58,7 +65,7 @@ export class TrackService {
     });
   }
 
-  nullifyAlbumReferences(albumId: string) {
+  nullifyAlbumReferences(albumId: string): void {
     this.tracks.forEach((track) => {
       if (track.albumId === albumId) {
         track.albumId = null;

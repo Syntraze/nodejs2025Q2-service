@@ -1,17 +1,28 @@
-
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Artist } from './entities/artist.entity';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { validate as isUUID } from 'uuid';
 
+import { FavoritesService } from 'src/favorites/favorites.service';
+import { AlbumService } from 'src/albums/albums.service';
+import { TrackService } from 'src/tracks/tracks.service';
+
 @Injectable()
 export class ArtistService {
   private artists: Artist[] = [];
+
+  constructor(
+    private readonly favoritesService: FavoritesService,
+    private readonly albumService: AlbumService,
+    private readonly trackService: TrackService,
+  ) {}
 
   findAll(): Artist[] {
     return this.artists;
@@ -41,6 +52,10 @@ export class ArtistService {
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
     const index = this.artists.findIndex((a) => a.id === id);
     if (index === -1) throw new NotFoundException('Artist not found');
+    this.favoritesService.handleEntityDeletion('artist', id);
+    this.albumService.nullifyArtistReferences(id);
+    this.trackService.nullifyArtistReferences(id);
+
     this.artists.splice(index, 1);
   }
 }
