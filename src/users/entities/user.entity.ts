@@ -9,8 +9,10 @@ export class User {
   password: string;
 
   version: number;
+
   @Transform(({ value }) => new Date(value).getTime())
   createdAt: number;
+
   @Transform(({ value }) => new Date(value).getTime())
   updatedAt: number;
 

@@ -1,34 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ArtistsService } from './artists.service';
+
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+} from '@nestjs/common';
+import { ArtistService } from './artists.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 
-@Controller('artists')
-export class ArtistsController {
-  constructor(private readonly artistsService: ArtistsService) {}
-
-  @Post()
-  create(@Body() createArtistDto: CreateArtistDto) {
-    return this.artistsService.create(createArtistDto);
-  }
+@Controller('artist')
+export class ArtistController {
+  constructor(private readonly artistService: ArtistService) {}
 
   @Get()
   findAll() {
-    return this.artistsService.findAll();
+    return this.artistService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.artistsService.findOne(+id);
+    return this.artistService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateArtistDto: UpdateArtistDto) {
-    return this.artistsService.update(+id, updateArtistDto);
+  @Post()
+  create(@Body() createArtistDto: CreateArtistDto) {
+    return this.artistService.create(createArtistDto);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() updateDto: UpdateArtistDto) {
+    return this.artistService.update(id, updateDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.artistsService.remove(+id);
+    this.artistService.remove(id);
   }
 }
