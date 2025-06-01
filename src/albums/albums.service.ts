@@ -1,26 +1,54 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Album } from './entities/album.entity';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { validate as isUUID } from 'uuid';
 
 @Injectable()
-export class AlbumsService {
-  create(createAlbumDto: CreateAlbumDto) {
-    return 'This action adds a new album';
+export class AlbumService {
+  private albums: Album[] = [];
+
+  findAll(): Album[] {
+    return this.albums;
   }
 
-  findAll() {
-    return `This action returns all albums`;
+  findOne(id: string): Album {
+    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
+    const album = this.albums.find((a) => a.id === id);
+    if (!album) throw new NotFoundException('Album not found');
+    return album;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} album`;
+  create(dto: CreateAlbumDto): Album {
+    const album = new Album(dto.name, dto.year, dto.artistId ?? null);
+    this.albums.push(album);
+    return album;
   }
 
-  update(id: number, updateAlbumDto: UpdateAlbumDto) {
-    return `This action updates a #${id} album`;
+  update(id: string, dto: UpdateAlbumDto): Album {
+    const album = this.findOne(id);
+    if (dto.name !== undefined) album.name = dto.name;
+    if (dto.year !== undefined) album.year = dto.year;
+    if (dto.artistId !== undefined) album.artistId = dto.artistId;
+    return album;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} album`;
+  remove(id: string): void {
+    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
+    const index = this.albums.findIndex((a) => a.id === id);
+    if (index === -1) throw new NotFoundException('Album not found');
+    this.albums.splice(index, 1);
+  }
+
+  nullifyArtistReferences(artistId: string) {
+    this.albums.forEach((album) => {
+      if (album.artistId === artistId) {
+        album.artistId = null;
+      }
+    });
   }
 }
