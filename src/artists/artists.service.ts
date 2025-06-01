@@ -19,8 +19,11 @@ export class ArtistService {
   private artists: Artist[] = [];
 
   constructor(
+    @Inject(forwardRef(() => FavoritesService))
     private readonly favoritesService: FavoritesService,
+    @Inject(forwardRef(() => AlbumService))
     private readonly albumService: AlbumService,
+    @Inject(forwardRef(() => TrackService))
     private readonly trackService: TrackService,
   ) {}
 

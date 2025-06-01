@@ -6,7 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { validate as isUUID } from 'uuid';
-
+import { Inject, forwardRef } from '@nestjs/common';
 import { Artist } from 'src/artists/entities/artist.entity';
 import { Album } from 'src/albums/entities/album.entity';
 import { Track } from 'src/tracks/entities/track.entity';
@@ -19,10 +19,14 @@ export class FavoritesService {
   private favoriteArtists = new Set<string>();
   private favoriteAlbums = new Set<string>();
   private favoriteTracks = new Set<string>();
-
   constructor(
+    @Inject(forwardRef(() => ArtistService))
     private readonly artistService: ArtistService,
+
+    @Inject(forwardRef(() => AlbumService))
     private readonly albumService: AlbumService,
+
+    @Inject(forwardRef(() => TrackService))
     private readonly trackService: TrackService,
   ) {}
 
