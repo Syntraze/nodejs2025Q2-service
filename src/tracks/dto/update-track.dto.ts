@@ -1,4 +1,19 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateTrackDto } from './create-track.dto';
+import { IsString, IsInt, IsOptional, IsUUID } from 'class-validator';
 
-export class UpdateTrackDto extends PartialType(CreateTrackDto) {}
+export class UpdateTrackDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsUUID()
+  artistId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  albumId?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  duration?: number;
+}
