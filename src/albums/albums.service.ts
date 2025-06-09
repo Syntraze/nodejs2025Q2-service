@@ -1,69 +1,81 @@
 import {
   Injectable,
-  NotFoundException,
   BadRequestException,
-  forwardRef,
-  Inject,
+  NotFoundException,
 } from '@nestjs/common';
-import { Album } from './entities/album.entity';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { validate as isUUID } from 'uuid';
-import { FavoritesService } from 'src/favorites/favorites.service';
-import { TrackService } from 'src/tracks/tracks.service';
 
 @Injectable()
 export class AlbumService {
-  private albums: Album[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(
-    @Inject(forwardRef(() => FavoritesService))
-    private readonly favoritesService: FavoritesService,
-    @Inject(forwardRef(() => TrackService))
-    private readonly trackService: TrackService,
-  ) {}
-
-  findAll(): Album[] {
-    return this.albums;
+  async findAll() {
+    return this.prisma.album.findMany();
   }
 
-  findOne(id: string): Album {
+  async findOne(id: string) {
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-    const album = this.albums.find((a) => a.id === id);
+
+    const album = await this.prisma.album.findUnique({ where: { id } });
     if (!album) throw new NotFoundException('Album not found');
+
     return album;
   }
 
-  create(dto: CreateAlbumDto): Album {
-    const album = new Album(dto.name, dto.year, dto.artistId ?? null);
-    this.albums.push(album);
-    return album;
+  async create(dto: CreateAlbumDto) {
+    if (dto.artistId && !isUUID(dto.artistId)) {
+      throw new BadRequestException('Invalid artistId');
+    }
+
+    if (dto.artistId) {
+      const artistExists = await this.prisma.artist.findUnique({
+        where: { id: dto.artistId },
+      });
+      if (!artistExists) throw new NotFoundException('Artist not found');
+    }
+
+    return this.prisma.album.create({ data: dto });
   }
 
-  update(id: string, dto: UpdateAlbumDto): Album {
-    const album = this.findOne(id);
-    if (dto.name !== undefined) album.name = dto.name;
-    if (dto.year !== undefined) album.year = dto.year;
-    if (dto.artistId !== undefined) album.artistId = dto.artistId;
-    return album;
-  }
-
-  remove(id: string): void {
+  async update(id: string, dto: UpdateAlbumDto) {
     if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-    const index = this.albums.findIndex((a) => a.id === id);
-    if (index === -1) throw new NotFoundException('Album not found');
 
-    this.favoritesService.handleEntityDeletion('album', id);
-    this.trackService.nullifyAlbumReferences(id);
+    const album = await this.prisma.album.findUnique({ where: { id } });
+    if (!album) throw new NotFoundException('Album not found');
 
-    this.albums.splice(index, 1);
+    if (dto.artistId && !isUUID(dto.artistId)) {
+      throw new BadRequestException('Invalid artistId');
+    }
+
+    if (dto.artistId) {
+      const artistExists = await this.prisma.artist.findUnique({
+        where: { id: dto.artistId },
+      });
+      if (!artistExists) throw new NotFoundException('Artist not found');
+    }
+
+    return this.prisma.album.update({
+      where: { id },
+      data: dto,
+    });
   }
 
-  nullifyArtistReferences(artistId: string): void {
-    this.albums.forEach((album) => {
-      if (album.artistId === artistId) {
-        album.artistId = null;
-      }
+  async remove(id: string) {
+    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
+
+    const album = await this.prisma.album.findUnique({ where: { id } });
+    if (!album) throw new NotFoundException('Album not found');
+
+    await this.prisma.album.delete({ where: { id } });
+  }
+
+  async nullifyArtistReferences(artistId: string) {
+    await this.prisma.album.updateMany({
+      where: { artistId },
+      data: { artistId: null },
     });
   }
 }
