@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AlbumService } from './albums.service';
 import { AlbumController } from './albums.controller';
 

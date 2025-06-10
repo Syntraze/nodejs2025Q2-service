@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ArtistService } from './artists.service';
 import { ArtistController } from './artists.controller';
 

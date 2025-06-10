@@ -1,8 +1,8 @@
 
 services:
-  library-app:
+  library-api-service:
     container_name: container_api_service
-    image: applibrary:latest
+    image: library-service:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,7 +19,7 @@ services:
     volumes:
       - ./src:/app/src
     networks:
-      - library
+      - library-service
   postgres:
     image: postgres:latest 
     container_name: postgres_container
@@ -35,10 +35,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data 
     networks:
-      - library
+      - library-service
 
 networks:
-  library:
+  library-service:
     driver: bridge
 
 volumes:

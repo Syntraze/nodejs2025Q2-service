@@ -21,7 +21,7 @@ export class TrackService {
   }
 
   async update(id: string, updateTrackDto: UpdateTrackDto): Promise<Track> {
-    await this.findTrackOrThrow(id); 
+    await this.findTrackOrThrow(id);
     return this.prisma.track.update({
       where: { id },
       data: updateTrackDto,
@@ -29,7 +29,7 @@ export class TrackService {
   }
 
   async remove(id: string): Promise<void> {
-    await this.findTrackOrThrow(id); 
+    await this.findTrackOrThrow(id);
     await this.prisma.track.delete({ where: { id } });
   }
 
