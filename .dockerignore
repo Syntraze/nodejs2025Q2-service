@@ -4,8 +4,6 @@ Dockerfile
 .dockerignore
 Dockerfile.prod
 Dockerfile.dev 
-Dockerfile.test
-test
 .git
 .gitignore
 .vscode

@@ -1,9 +1,8 @@
-version: '3.8'
 
 services:
-  library-service:
-    container_name: container_library_service
-    image: library-service:latest
+  library-app:
+    container_name: container_api_service
+    image: applibrary:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -16,15 +15,14 @@ services:
       PORT: ${PORT}
       DATABASE_URL: ${URL_FOR_DOCKER}
     depends_on:
-      - library-postgres
+      - postgres
     volumes:
       - ./src:/app/src
     networks:
-      - library-network
-
+      - library
   postgres:
     image: postgres:latest 
-    container_name: container_library_postgres
+    container_name: postgres_container
     restart: always
     env_file:
       - .env
@@ -33,15 +31,15 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - 5433:5432
+      - 5433:5432 
     volumes:
-      - library_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data 
     networks:
-      - library-network
+      - library
 
 networks:
-  library-network:
+  library:
     driver: bridge
 
 volumes:
-  library_postgres_data:
+  postgres_data:
