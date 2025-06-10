@@ -3,15 +3,17 @@ import {
   Get,
   Post,
   Body,
-  Param,
   Put,
+  Param,
   Delete,
-  HttpCode,
+  ParseUUIDPipe,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
 
 @Controller('user')
 export class UserController {
@@ -19,31 +21,34 @@ export class UserController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  findAll() {
-    return this.userService.findAll();
+  async findAll(): Promise<User[]> {
+    return await this.userService.findAll();
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(id);
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<User> {
+    return await this.userService.findOne(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateUserDto) {
-    return this.userService.create(dto);
+  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    return await this.userService.create(createUserDto);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
-  updatePassword(@Param('id') id: string, @Body() dto: UpdatePasswordDto) {
-    return this.userService.updatePassword(id, dto);
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return await this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    await this.userService.remove(id);
+  async remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
+    return await this.userService.remove(id);
   }
 }

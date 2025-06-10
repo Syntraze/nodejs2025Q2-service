@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ArtistsModule } from './artists/artists.module';
 
 import { TracksModule } from './tracks/tracks.module';
@@ -9,6 +7,7 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
+import { PrismaService } from './prisma/prisma.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -17,9 +16,8 @@ import { PrismaModule } from './prisma/prisma.module';
     AlbumsModule,
     FavoritesModule,
     UsersModule,
-    PrismaModule
+    PrismaModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [PrismaService],
 })
 export class AppModule {}

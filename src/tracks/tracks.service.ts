@@ -1,66 +1,43 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { validate as isUUID } from 'uuid';
+import { Track } from './entities/track.entity';
 
 @Injectable()
 export class TrackService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(): Promise<Track[]> {
     return this.prisma.track.findMany();
   }
 
-  async findOne(id: string) {
-    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-
-    const track = await this.prisma.track.findUnique({ where: { id } });
-    if (!track) throw new NotFoundException('Track not found');
-
-    return track;
+  async findOne(id: string): Promise<Track> {
+    return this.findTrackOrThrow(id);
   }
 
-  async create(dto: CreateTrackDto) {
-    return this.prisma.track.create({ data: dto });
+  async create(createTrackDto: CreateTrackDto): Promise<Track> {
+    return this.prisma.track.create({ data: createTrackDto });
   }
 
-  async update(id: string, dto: UpdateTrackDto) {
-    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-
-    const track = await this.prisma.track.findUnique({ where: { id } });
-    if (!track) throw new NotFoundException('Track not found');
-
+  async update(id: string, updateTrackDto: UpdateTrackDto): Promise<Track> {
+    await this.findTrackOrThrow(id); 
     return this.prisma.track.update({
       where: { id },
-      data: dto,
+      data: updateTrackDto,
     });
   }
 
-  async remove(id: string) {
-    if (!isUUID(id)) throw new BadRequestException('Invalid UUID');
-
-    const track = await this.prisma.track.findUnique({ where: { id } });
-    if (!track) throw new NotFoundException('Track not found');
-
+  async remove(id: string): Promise<void> {
+    await this.findTrackOrThrow(id); 
     await this.prisma.track.delete({ where: { id } });
   }
 
-  async nullifyArtistReferences(artistId: string) {
-    await this.prisma.track.updateMany({
-      where: { artistId },
-      data: { artistId: null },
-    });
-  }
-
-  async nullifyAlbumReferences(albumId: string) {
-    await this.prisma.track.updateMany({
-      where: { albumId },
-      data: { albumId: null },
-    });
+  private async findTrackOrThrow(id: string): Promise<Track> {
+    const track = await this.prisma.track.findUnique({ where: { id } });
+    if (!track) {
+      throw new NotFoundException('Track not found');
+    }
+    return track;
   }
 }
