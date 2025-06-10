@@ -33,10 +33,10 @@ For more information about OpenAPI/Swagger please visit https://swagger.io/.
 ## DOCKER
 
 
-docker-compose up --build
+npm run start docker:build
 
-for tests: docker exec container_api_service npm run test
- for scan npm run docker:scan
+tests: docker exec container_api_service npm run test
+scan: npm run docker:scan
 
 
 ## Testing
