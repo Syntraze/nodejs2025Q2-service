@@ -1,7 +1,26 @@
 version: '3.8'
 
 services:
-
+  library-service:
+    container_name: container_library_service
+    image: library-service:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+    restart: always
+    env_file:
+      - .env
+    environment:
+      PORT: ${PORT}
+      DATABASE_URL: ${URL_FOR_DOCKER}
+    depends_on:
+      - library-postgres
+    volumes:
+      - ./src:/app/src
+    networks:
+      - library-network
 
   postgres:
     image: postgres:latest 

@@ -17,6 +17,14 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+
+
+model Favorite {
+  favoriteId String   @id @default(uuid())
+  artists    String[]
+  albums     String[]
+  tracks     String[]
+}
 model Track {
   id       String  @id @default(uuid())
   name     String
@@ -26,7 +34,6 @@ model Track {
   artist   Artist? @relation(fields: [artistId], references: [id], onDelete: SetNull)
   album    Album?  @relation(fields: [albumId], references: [id], onDelete: SetNull)
 }
-
 model Album {
   id       String  @id @default(uuid())
   year     Int
@@ -35,7 +42,6 @@ model Album {
   tracks   Track[]
   artist   Artist? @relation(fields: [artistId], references: [id], onDelete: SetNull)
 }
-
 model Artist {
   id     String  @id @default(uuid())
   grammy Boolean
@@ -44,9 +50,3 @@ model Artist {
   tracks Track[]
 }
 
-model Favorite {
-  favoriteId String   @id @default(uuid())
-  artists    String[]
-  albums     String[]
-  tracks     String[]
-}
