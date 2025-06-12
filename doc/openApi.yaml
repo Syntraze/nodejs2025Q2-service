@@ -1,0 +1,409 @@
+openapi: 3.0.3
+info:
+  title: Music Favorites API
+  version: 1.0.0
+  description: REST API for managing users, artists, albums, tracks, and favorites.
+
+paths:
+  /user:
+    get:
+      summary: Get all users
+      responses:
+        '200':
+          description: All users
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserDto'
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: Invalid request body
+
+  /user/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: User found
+        '400':
+          description: Invalid UUID
+        '404':
+          description: User not found
+    put:
+      summary: Update user password
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordDto'
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          description: Invalid UUID
+        '403':
+          description: Wrong password
+        '404':
+          description: User not found
+    delete:
+      summary: Delete user
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: User deleted
+        '400':
+          description: Invalid UUID
+        '404':
+          description: User not found
+
+  /artist:
+    get:
+      summary: Get all artists
+      responses:
+        '200':
+          description: All artists
+    post:
+      summary: Create artist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Artist'
+      responses:
+        '201':
+          description: Artist created
+        '400':
+          description: Missing fields
+
+  /artist/{id}:
+    get:
+      summary: Get artist by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Artist found
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Artist not found
+    put:
+      summary: Update artist
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Artist'
+      responses:
+        '200':
+          description: Artist updated
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+    delete:
+      summary: Delete artist
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Artist deleted
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+
+  /album:
+    get:
+      summary: Get all albums
+      responses:
+        '200':
+          description: All albums
+    post:
+      summary: Create album
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Album'
+      responses:
+        '201':
+          description: Album created
+        '400':
+          description: Missing fields
+
+  /album/{id}:
+    get:
+      summary: Get album by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Album found
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Album not found
+    put:
+      summary: Update album
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Album'
+      responses:
+        '200':
+          description: Album updated
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+    delete:
+      summary: Delete album
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Album deleted
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+
+  /track:
+    get:
+      summary: Get all tracks
+      responses:
+        '200':
+          description: All tracks
+    post:
+      summary: Create track
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Track'
+      responses:
+        '201':
+          description: Track created
+        '400':
+          description: Missing fields
+
+  /track/{id}:
+    get:
+      summary: Get track by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Track found
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+    put:
+      summary: Update track
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Track'
+      responses:
+        '200':
+          description: Track updated
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+    delete:
+      summary: Delete track
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Track deleted
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not found
+
+  /favs:
+    get:
+      summary: Get all favorites
+      responses:
+        '200':
+          description: All favorites
+
+  /favs/artist/{id}:
+    post:
+      summary: Add artist to favorites
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '201':
+          description: Added
+        '400':
+          description: Invalid UUID
+        '422':
+          description: Artist does not exist
+    delete:
+      summary: Remove artist from favorites
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Removed
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not in favorites
+
+  /favs/album/{id}:
+    post:
+      summary: Add album to favorites
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '201':
+          description: Added
+        '400':
+          description: Invalid UUID
+        '422':
+          description: Album does not exist
+    delete:
+      summary: Remove album from favorites
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Removed
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not in favorites
+
+  /favs/track/{id}:
+    post:
+      summary: Add track to favorites
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '201':
+          description: Added
+        '400':
+          description: Invalid UUID
+        '422':
+          description: Track does not exist
+    delete:
+      summary: Remove track from favorites
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Removed
+        '400':
+          description: Invalid UUID
+        '404':
+          description: Not in favorites
+
+components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID of the resource
+
+  schemas:
+    CreateUserDto:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+
+    UpdatePasswordDto:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+
+    Artist:
+      type: object
+      required: [name, grammy]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        grammy:
+          type: boolean
+
+    Album:
+      type: object
+      required: [name, year]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        year:
+          type: integer
+        artistId:
+          type: string
+          format: uuid
+          nullable: true
+
+    Track:
+      type: object
+      required: [name, duration]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        duration:
+          type: number
+        artistId:
+          type: string
+          format: uuid
+          nullable: true
+        albumId:
+          type: string
+          format: uuid
+          nullable: true
