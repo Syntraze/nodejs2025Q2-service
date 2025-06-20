@@ -28,7 +28,6 @@ export class FavoritesService {
       album: this.prisma.album,
       track: this.prisma.track,
     } as const;
-    
 
     let entity: any;
     if (type === 'artist') {
