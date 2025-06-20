@@ -23,11 +23,7 @@ export class FavoritesService {
   }
 
   private async ensureEntityExists(id: string, type: FavoriteType) {
-    const modelMap = {
-      artist: this.prisma.artist,
-      album: this.prisma.album,
-      track: this.prisma.track,
-    } as const;
+  
 
     let entity: any;
     if (type === 'artist') {

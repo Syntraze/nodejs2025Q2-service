@@ -2,7 +2,6 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { MyLogger } from './logger.service';
 
-
 @Injectable()
 export class Loggeriddleware implements NestMiddleware {
   private readonly context = Loggeriddleware.name;
@@ -31,7 +30,6 @@ export class Loggeriddleware implements NestMiddleware {
 
     next();
   }
-
 
   private safeStringify(obj: any): string {
     try {
