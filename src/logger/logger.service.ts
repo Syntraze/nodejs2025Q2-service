@@ -41,6 +41,13 @@ export class MyLogger implements LoggerService, OnModuleInit {
   private logFile = join(LOG_FOLDER, 'app.log');
   private errorFile = join(LOG_FOLDER, 'errors.log');
 
+  constructor() {
+    // Ensure log directory exists immediately on instantiation
+    this.prepareLogDir().catch((err) =>
+      console.error('Logger init error:', err),
+    );
+  }
+
   async onModuleInit() {
     await this.prepareLogDir();
   }
@@ -84,8 +91,11 @@ export class MyLogger implements LoggerService, OnModuleInit {
   }
 
   private async writeToFile(level: LogLevel, text: string) {
+    await this.prepareLogDir(); // Ensure directory exists before writing
+
     const target =
       level === 'error' || level === 'fatal' ? this.errorFile : this.logFile;
+
     await this.checkRotation(target);
     await appendFile(target, text + '\n');
   }
