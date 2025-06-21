@@ -4,38 +4,39 @@ import { MyLogger } from './logger.service';
 
 @Injectable()
 export class Loggeriddleware implements NestMiddleware {
-  private readonly context = Loggeriddleware.name;
-
   constructor(private readonly logger: MyLogger) {}
 
-  use(req: Request, res: Response, next: NextFunction) {
-    const { method, originalUrl, query = {}, body = {} } = req;
-    const userAgent = req.get('user-agent') ?? '';
-    const clientIp = req.ip;
-    const startTs = Date.now();
+  use(req: Request, res: Response, next: NextFunction): void {
+    const start = process.hrtime.bigint();
+    const { method, originalUrl, body, query } = req;
+    const ua = req.headers['user-agent'] || 'unknown';
+    const ip = req.ip;
 
     res.once('finish', () => {
-      const { statusCode } = res;
-      const durationMs = Date.now() - startTs;
+      const duration = Number(process.hrtime.bigint() - start) / 1_000_000; // ms
+      const status = res.statusCode;
 
-      const baseMsg = `${method} ${originalUrl} ${statusCode} ${durationMs}ms`;
       this.logger.log(
-        `${baseMsg} — UA: ${userAgent} — IP: ${clientIp}`,
-        this.context,
+        `[${method}] ${originalUrl} - ${status} (${duration.toFixed(2)}ms)`,
+        'Loggeriddleware',
       );
 
-      this.logger.debug(`Query: ${this.safeStringify(query)}`, this.context);
-      this.logger.debug(`Body: ${this.safeStringify(body)}`, this.context);
+      this.logger.debug(`IP: ${ip} | UA: ${ua}`, 'Loggeriddleware');
+      this.logger.debug(
+        `Query: ${this.stringify(query)}`,
+        'HttpLoggerMiddleware',
+      );
+      this.logger.debug(`Payload: ${this.stringify(body)}`, 'Loggeriddleware');
     });
 
     next();
   }
 
-  private safeStringify(obj: any): string {
+  private stringify(data: any): string {
     try {
-      return JSON.stringify(obj);
+      return JSON.stringify(data);
     } catch {
-      return '[Unable to stringify]';
+      return '[Invalid JSON]';
     }
   }
 }

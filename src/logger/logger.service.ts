@@ -4,18 +4,19 @@ import {
   OnModuleInit,
   LogLevel,
 } from '@nestjs/common';
-import { appendFile, mkdir, stat, rename } from 'fs/promises';
+import { mkdir, stat, rename, appendFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const defaultLogLevel = (process.env.APP_LOG_LEVEL as LogLevel) || 'debug';
-const logDirectory = process.env.APP_LOG_DIR || 'logs';
-const maxFileSizeKb = Number(process.env.APP_MAX_FILE_SIZE_KB) || 10;
-const maxFileSizeBytes = maxFileSizeKb * 1024;
+const LOG_LEVEL: LogLevel = (process.env.APP_LOG_LEVEL as LogLevel) || 'debug';
+const LOG_FOLDER = process.env.APP_LOG_DIR || 'logs';
+const MAX_SIZE_KB = parseInt(process.env.APP_MAX_FILE_SIZE_KB) || 10;
+const MAX_SIZE_BYTES = MAX_SIZE_KB * 1024;
 
-const levelPriority: Record<LogLevel, number> = {
+const PRIORITY: Record<LogLevel, number> = {
   error: 0,
   warn: 1,
   log: 2,
@@ -24,106 +25,105 @@ const levelPriority: Record<LogLevel, number> = {
   verbose: 4,
 };
 
-const levelColorMap: Record<LogLevel, string> = {
-  error: '\x1b[31m', // Red
-  fatal: '\x1b[35m', // Magenta
-  warn: '\x1b[33m', // Yellow
-  log: '\x1b[32m', // Green
-  debug: '\x1b[34m', // Blue
-  verbose: '\x1b[36m', // Cyan
+const COLORS: Record<LogLevel, string> = {
+  error: '\x1b[31m',
+  fatal: '\x1b[35m',
+  warn: '\x1b[33m',
+  log: '\x1b[32m',
+  debug: '\x1b[34m',
+  verbose: '\x1b[36m',
 };
-const resetColor = '\x1b[0m';
+const RESET = '\x1b[0m';
 
 @Injectable()
 export class MyLogger implements LoggerService, OnModuleInit {
-  private currentPriority = levelPriority[defaultLogLevel];
-  private appLogPath = join(logDirectory, 'application.log');
-  private errLogPath = join(logDirectory, 'error.log');
+  private currentLevel = PRIORITY[LOG_LEVEL];
+  private logFile = join(LOG_FOLDER, 'app.log');
+  private errorFile = join(LOG_FOLDER, 'errors.log');
 
   async onModuleInit() {
-    await this.ensureLogDirectory();
+    await this.prepareLogDir();
   }
 
-  private async ensureLogDirectory() {
+  private async prepareLogDir() {
+    if (!existsSync(LOG_FOLDER)) {
+      await mkdir(LOG_FOLDER, { recursive: true });
+    }
+  }
+
+  private formatMessage(
+    level: LogLevel,
+    message: unknown,
+    context?: string,
+    trace?: string,
+  ): string {
+    const time = new Date().toISOString();
+    const ctxStr = context ? ` [${context}]` : '';
+    const traceStr = trace ? `\n${trace}` : '';
+    return `[${time}] [${level.toUpperCase()}]${ctxStr} ${message}${traceStr}`;
+  }
+
+  private printToConsole(formatted: string, level: LogLevel) {
+    const color = COLORS[level] || '';
+    process.stdout.write(`${color}${formatted}${RESET}\n`);
+  }
+
+  private async checkRotation(path: string) {
     try {
-      await stat(logDirectory);
+      const stats = await stat(path);
+      if (stats.size >= MAX_SIZE_BYTES) {
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const archive = path.replace(/\.log$/, `_${stamp}.log`);
+        await rename(path, archive);
+      }
     } catch (err: any) {
-      if (err.code === 'ENOENT') {
-        await mkdir(logDirectory, { recursive: true });
+      if (err.code !== 'ENOENT') {
+        console.error('Rotation error:', err);
       }
     }
   }
 
-  log(message: unknown, context?: string) {
-    this.print('log', message, context);
+  private async writeToFile(level: LogLevel, text: string) {
+    const target =
+      level === 'error' || level === 'fatal' ? this.errorFile : this.logFile;
+    await this.checkRotation(target);
+    await appendFile(target, text + '\n');
   }
 
-  fatal(message: unknown, context?: string) {
-    this.print('fatal', message, context);
-  }
-
-  error(message: unknown, trace?: string, context?: string) {
-    this.print('error', message, context, trace);
-  }
-
-  warn(message: unknown, context?: string) {
-    this.print('warn', message, context);
-  }
-
-  debug(message: unknown, context?: string) {
-    this.print('debug', message, context);
-  }
-
-  verbose(message: unknown, context?: string) {
-    this.print('verbose', message, context);
-  }
-
-  private async print(
+  private async handleLog(
     level: LogLevel,
     message: unknown,
     context?: string,
     trace?: string,
   ) {
-    if (this.currentPriority < levelPriority[level]) {
-      return;
-    }
+    if (PRIORITY[level] > this.currentLevel) return;
 
-    const timestamp = new Date().toISOString();
-    const header = `[${timestamp}] [${level.toUpperCase()}]`;
-    const ctx = context ? ` [${context}]` : '';
-    const body = `${message}${trace ? `\n${trace}` : ''}`;
-    const fullText = `${header}${ctx} ${body}`;
-    const logEntry = fullText + '\n';
-
-    const color = levelColorMap[level] || '';
-    const coloredEntry = `${color}${fullText}${resetColor}\n`;
-    process.stdout.write(coloredEntry);
-
-    try {
-      if (level === 'error' || level === 'fatal') {
-        await this.rotateIfNeeded(this.errLogPath);
-        await appendFile(this.errLogPath, logEntry);
-      }
-
-      await this.rotateIfNeeded(this.appLogPath);
-      await appendFile(this.appLogPath, logEntry);
-    } catch (err) {
-      console.error('Logger failed writing to disk:', err);
-    }
+    const formatted = this.formatMessage(level, message, context, trace);
+    this.printToConsole(formatted, level);
+    await this.writeToFile(level, formatted);
   }
 
-  private async rotateIfNeeded(filePath: string) {
-    try {
-      const { size } = await stat(filePath);
-      if (size > maxFileSizeBytes) {
-        const timeSegment = new Date().toISOString().replace(/[:.]/g, '-');
-        const archiveName = filePath.replace(/\.log$/, `_${timeSegment}.log`);
-        await rename(filePath, archiveName);
-      }
-    } catch (err: any) {
-      if (err.code !== 'ENOENT') {
-        console.error('Logger rotation error:', err);
-      }
-    }
+  log(msg: unknown, ctx?: string) {
+    this.handleLog('log', msg, ctx);
+  }
+
+  error(msg: unknown, trace?: string, ctx?: string) {
+    this.handleLog('error', msg, ctx, trace);
+  }
+
+  warn(msg: unknown, ctx?: string) {
+    this.handleLog('warn', msg, ctx);
+  }
+
+  debug(msg: unknown, ctx?: string) {
+    this.handleLog('debug', msg, ctx);
+  }
+
+  verbose(msg: unknown, ctx?: string) {
+    this.handleLog('verbose', msg, ctx);
+  }
+
+  fatal(msg: unknown, ctx?: string) {
+    this.handleLog('fatal', msg, ctx);
   }
 }
